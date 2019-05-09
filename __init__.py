@@ -1,8 +1,8 @@
 import os
 
-from flask import Flask, render_template, redirect, url_for, request, flash
+from flask import Flask, render_template, redirect, url_for, request, session, flash
 from flask_migrate import Migrate
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 def create_app(test_config=None):
     app = Flask(__name__)
@@ -35,7 +35,7 @@ def create_app(test_config=None):
                 error = 'Username is already taken.'
 
             if error is None:
-                user = User(username=username, password=password)
+                user = User(username=username, password=generate_password_hash(password))
                 db.session.add(user)
                 db.session.commit()
                 flash("Successfully signed up! Please log in.", 'success')
@@ -44,7 +44,7 @@ def create_app(test_config=None):
             flash(error, 'error')
 
         return render_template('sign_up.html')
-
+    
     @app.route('/log_in', methods=('GET', 'POST'))
     def log_in():
         if request.method == 'POST':
@@ -64,6 +64,13 @@ def create_app(test_config=None):
 
             flash(error, category='error')
         return render_template('log_in.html')
+
+
+    @app.route('/log_out', methods=('GET', 'DELETE'))
+    def log_out():
+        session.clear()
+        flash('Successfully logged out.', 'success')
+        return redirect(url_for('log_in'))
 
     @app.route('/')
     def index():
